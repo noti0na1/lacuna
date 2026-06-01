@@ -18,10 +18,9 @@ val res0: Int = 5050
 of type `T`. The generated code is type-checked against the surrounding program
 before it runs, so an ill-typed action is rejected with a compiler diagnostic
 and never touches the environment; the diagnostic is fed back and the call
-retries. Because a hole is ordinary code, holes compose: a generated body can
-call helpers in scope and open further `agent[...]` holes, giving sub-agents,
-parallel decomposition, and multi-step planning as plain control flow. Nesting
-is depth-bounded, and runtime failures stay the body's responsibility.
+retries. Because a hole is ordinary code, holes compose: a generated body can use
+variables and helpers in scope and open further `agent[...]` holes, giving sub-agents,
+parallel decomposition, and multi-step planning as plain control flow.
 
 ## Examples
 
@@ -113,9 +112,7 @@ ivy repo once:
 ./setup.sh
 ```
 
-This clones the fork, runs `sbt scala3-bootstrapped/publishLocalBin`, and
-publishes the snapshot to `~/.ivy2/local` where `scala-cli` / `scala` resolve
-it. The build is heavy and can take several minutes.
+The build is heavy and can take several minutes.
 
 ## Configure
 
@@ -133,6 +130,11 @@ temperature, recursion depth, attempt budget, transcript history).
 
 ```bash
 ./start.sh
+
+Welcome to Scala 3.10.0-RC1-bin-SNAPSHOT-git-e9c4cff (17.0.16, Java OpenJDK 64-Bit Server VM).
+Type in expressions for evaluation. Or try :help.
+
+scala> 
 ```
 
 ## License

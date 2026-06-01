@@ -240,3 +240,71 @@ val res0: List[(String, String)] = List(
   )
 )
 ```
+
+## A typed skill: code review
+
+A "skill" is just a typed function that mixes ordinary Scala with `agent` holes.
+The holes do the open-ended work (finding issues, summarizing); the plain code
+makes the decisions and returns structured, typed data.
+
+```scala
+scala> case class Finding(issue: String, severity: String, suggestion: String)
+// defined case class Finding
+
+scala> case class Review(summary: String, findings: List[Finding], approved: Boolean)
+// defined case class Review
+
+scala> def review(code: String): Review =
+         // step 1: let the model enumerate concrete issues
+         val findings = agent[List[Finding]](
+           s"review this Scala code for bugs and smells; for each give issue, " +
+           s"severity (low/medium/high), and a one-line suggestion:\n$code")
+         // step 2: a one-sentence summary of what was found
+         val summary = agent[String](s"summarize these review findings in one sentence: $findings")
+         // step 3: plain code decides the verdict, blocking only on high severity
+         val approved = !findings.exists(_.severity == "high")
+         Review(summary, findings, approved)
+// defined function review
+
+scala> val snippet = "def avg(xs: List[Int]): Int = xs.sum / xs.size"
+val snippet: String = "def avg(xs: List[Int]): Int = xs.sum / xs.size"
+
+scala> review(snippet)
+[agent] reviewing code for issues
+[agent] summarizing findings
+val res0: Review = Review(
+  summary = "The findings are: Division by zero when list is empty (high) and Integer division truncates fractional part (medium).",
+  findings = List(
+    Finding(
+      issue = "Division by zero when list is empty",
+      severity = "high",
+      suggestion = "Guard with xs.nonEmpty or return Option[Int]"
+    ),
+    Finding(
+      issue = "Integer division truncates fractional part",
+      severity = "medium",
+      suggestion = "Use Double for average calculation"
+    )
+  ),
+  approved = false
+)
+```
+
+Because `review` is a normal typed value, it composes like any other function:
+
+```scala
+scala> val r = review(snippet)
+scala> if r.approved then "LGTM" else s"changes requested: ${r.findings.size} issue(s)"
+val res3: String = "changes requested: 2 issue(s)"
+```
+
+We can also ask the agent to review every code in a directory, and it will
+read each file, call `review`, and write a summary report, automatically:
+
+```scala
+scala> agent[Any]("review every code in `/Users/user/project/src`")
+[agent] reviewing A.scala
+[agent] reviewing B.scala
+[agent] reviewing C.scala
+...
+```
